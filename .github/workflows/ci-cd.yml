@@ -26,7 +26,7 @@ jobs:
     # Шаг 4: Проверка стиля кода с помощью flake8
     - name: Run flake8
       run: |  
-        flake8 .
+        flake8 . --exclude=.venv,venv,__pycache__,build,dist
     # Шаг 5: Запускаем SAST-сканер (Bandit)
     - name: Run Bandit SAST Scan
       run: |
