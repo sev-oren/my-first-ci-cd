@@ -1,9 +1,9 @@
 ﻿name: CI/CD Pipeline with SAST
 on:
   push:
-    branches: [main, master]
+    branches: [ main, master ]
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
 jobs:
   security-scan:
     name: Security Scan
@@ -23,6 +23,11 @@ jobs:
     - name: Run Bandit SAST Scan
       run: |
         bandit -r . --severity-level high --confidence-level high -f json -o bandit_results.json || true
+    - name: Upload Bandit Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bandit-report
+        path: bandit_results.json
     - name: Check Bandit Results
       id: bandit-check
       run: |
