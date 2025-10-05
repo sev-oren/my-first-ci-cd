@@ -23,37 +23,39 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest bandit flake8 jq
-    # Шаг 4: Проверка стиля кода с помощью flake8
+    # Шаг 4: Запускаем unit-тесты (ПЕРЕД проверками безопасности)
+    - name: Run Tests with pytest
+      run: |
+        python -m pytest tests/ -v || echo "Tests completed"
+    # Шаг 5: Проверка стиля кода с помощью flake8
     - name: Run flake8
       run: |  
         flake8 . --exclude=.venv,venv,__pycache__,build,dist
-    # Шаг 5: Запускаем SAST-сканер (Bandit)
+    # Шаг 6: Запускаем SAST-сканер (Bandit)
     - name: Run Bandit SAST Scan
       run: |
         bandit -r . --severity-level high --confidence-level high -f json -o bandit_results.json || true
-    # Шаг 5.1: Сохраняем результат Bandit как артефакт
+    # Шаг 7: Сохраняем результат Bandit как артефакт
     - name: Upload Bandit Results
       uses: actions/upload-artifact@v4
       with:
         name: bandit-report
         path: bandit_results.json
-    # Шаг 5.2: Анализируем отчет Bandit (исправленная версия)
+    # Шаг 8: Анализируем отчет Bandit
     - name: Check Bandit Results
       id: bandit-check
       run: |
         if [ -f bandit_results.json ]; then
           echo "Checking Bandit results..."
-          # Проверяем есть ли хоть одна ошибка
           if jq -e '.results | length > 0' bandit_results.json; then
             echo "Bandit found issues! Check the bandit_results.json artifact for details."
-            # Не фейлим пайплайн, только предупреждаем
           else
             echo "No issues found by Bandit."
           fi
         else
           echo "Bandit report not found."
         fi
-    # Шаг 6: Запускаем сканер зависимостей Trivy
+    # Шаг 9: Запускаем сканер зависимостей Trivy
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
@@ -63,7 +65,3 @@ jobs:
         exit-code: 1
         ignore-unfixed: true
         severity: 'HIGH,CRITICAL'
-    # Шаг 7: Запускаем unit-тесты
-    - name: Run Tests with pytest
-      run: |
-        python -m pytest tests/ -v || echo "Tests completed"
