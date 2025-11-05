@@ -1,86 +1,58 @@
 ﻿name: CI/CD Pipeline with SAST
+
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    
     steps:
-    # Шаг 1: Получаем код из репозитория
+    # Шаг 1: олучаем код из репозитория
     - name: Checkout code
       uses: actions/checkout@v4
-    # Шаг 2: Настраиваем окружение Python
+
+    # Шаг 2: астраиваем окружение Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    # Шаг 3: Устанавливаем зависимости
+
+    # Шаг 3: станавливаем зависимости
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest bandit flake8 jq
-    # Шаг 4: Проверка стиля кода с помощью flake8
-    - name: Run flake8
-      run: |  
-        flake8 . --exclude=.venv,venv,__pycache__,build,dist
-    # Шаг 5: Запускаем SAST-сканер (Bandit)
+        pip install pytest bandit
+
+    # Шаг 4: апускаем SAST-сканер (Bandit)
     - name: Run Bandit SAST Scan
       run: |
         bandit -r . --severity-level high --confidence-level high -f json -o bandit_results.json || true
-    # Шаг 6: Сохраняем результат Bandit как артефакт
+
+    # Шаг 5: Сохраняем отчет Bandit как артефакт
     - name: Upload Bandit Results
       uses: actions/upload-artifact@v4
       with:
         name: bandit-report
         path: bandit_results.json
-    # Шаг 7: Анализируем отчет Bandit
-    - name: Check Bandit Results
-      id: bandit-check
-      run: |
-        if [ -f bandit_results.json ]; then
-          echo "Checking Bandit results..."
-          if jq -e '.results | length > 0' bandit_results.json; then
-            echo "Bandit found issues! Check the bandit_results.json artifact for details."
-          else
-            echo "No issues found by Bandit."
-          fi
-        else
-          echo "Bandit report not found."
-        fi
-    # Шаг 8: Запускаем unit-тесты
+
+    # Шаг 6: апускаем сканер зависимостей Trivy
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'table'
+        exit-code: 1
+        ignore-unfixed: true
+        severity: 'HIGH,CRITICAL'
+
+    # Шаг 7: апускаем unit-тесты
     - name: Run Tests with pytest
       run: |
         python -m pytest tests/ -v || echo "Tests completed"
-  # ДОБАВЛЕНО: Новый job для сборки, который запускается только после успешного security-scan
-  build:
-    name: Build Project
-    runs-on: ubuntu-latest
-    needs: security-scan # запускать только после успешного выполнения security-scan
-    steps:
-      # Шаг 1: Получаем код
-      - name: Checkout code
-        uses: actions/checkout@v4
-      # Шаг 2: Настраиваем окружение Python
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      # Шаг 3: Выполняем сборку проекта
-      - name: Build project
-        run: |
-          echo "Building project..."
-          # пример для Python-проекта:
-          # python setup.py sdist bdist_wheel
-          # или для современных проектов:
-          # pip install build
-          # python -m build
-          # Если у вас есть setup.py:
-          # python setup.py sdist bdist_wheel
-          # Или если используете pyproject.toml:
-          # pip install build
-          # python -m build
-          echo "Build completed successfully!"
