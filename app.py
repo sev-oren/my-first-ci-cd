@@ -1,25 +1,9 @@
-﻿"""
-Simple Flask application for CI/CD demo.
-"""
-from flask import Flask, request
-
+﻿from flask import Flask
 app = Flask(__name__)
 
-
 @app.route('/')
-def hello_world():
-    """
-    Main page handler.
-    
-    Returns:
-        str: Greeting message
-    """
-    try:
-        user_id = int(request.args.get('id', 1))
-    except ValueError:
-        user_id = 1
-    return f'<h1>Hello, user #{user_id}!</h1>'
-
+def hello():
+    return 'Hello, World!'
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run()

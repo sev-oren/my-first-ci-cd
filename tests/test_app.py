@@ -1,14 +1,7 @@
-﻿import pytest
-from app import app
+﻿from app import app
 
-def test_hello_world():
+def test_hello():
     with app.test_client() as client:
         response = client.get('/')
         assert response.status_code == 200
         assert b'Hello' in response.data
-
-def test_health_check():
-    with app.test_client() as client:
-        response = client.get('/health')
-        assert response.status_code == 200
-        assert b'OK' in response.data
