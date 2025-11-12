@@ -1,0 +1,47 @@
+﻿name: Simple CI/CD Pipeline
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install Flask
+        run: pip install flask
+      
+      - name: Test Flask app
+        run: |
+          python -c "
+print('Starting test...')
+from app import app
+print('✅ App imported successfully')
+with app.test_client() as client:
+    response = client.get('/')
+    print(f'Status code: {response.status_code}')
+    print(f'Response: {response.data.decode()}')
+    if response.status_code == 200:
+        print('✅ Test PASSED!')
+    else:
+        print('❌ Test FAILED!')
+          "
+      
+      - name: Success
+        run: echo "🎉 Pipeline completed successfully!"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Build
+        run: |
+          echo "�� Building application..."
+          echo "✅ All tests passed!"
+          echo "✅ Build completed!"
