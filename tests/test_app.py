@@ -1,7 +1,10 @@
-﻿import pytest
+﻿"""Unit tests for Flask application."""
+import pytest
 from app import app
 
+
 def test_hello_world():
+    """Test main page response."""
     with app.test_client() as client:
         response = client.get('/')
         assert response.status_code == 200
