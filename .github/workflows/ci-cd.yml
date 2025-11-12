@@ -26,10 +26,10 @@ jobs:
           pip install -r requirements.txt
           pip install bandit flake8 pytest
 
-      # SAST - Bandit (С .venv)
+      # SAST - Bandit (теперь .venv нет в репозитории)
       - name: Run Bandit SAST Scan
         run: |
-          bandit -r . --exclude .venv -f json -o bandit_results.json || echo "Bandit scan completed"
+          bandit -r . -f json -o bandit_results.json
 
       - name: Upload Bandit Report
         uses: actions/upload-artifact@v4
