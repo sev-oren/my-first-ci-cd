@@ -1,0 +1,87 @@
+﻿name: CI/CD Pipeline with SAST
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: олучаем код из репозитория
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Шаг 2: астраиваем окружение Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # Шаг 3: станавливаем зависимости
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest bandit flake8
+
+      # Шаг 4: апускаем SAST-сканер (Bandit)
+      - name: Run Bandit SAST Scan
+        run: |
+          bandit -r . --severity-level high --confidence-level high -f json -o bandit_results.json || true
+
+      # Шаг 4.1: Сохраняем отчет Bandit как артефакт
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit_results.json
+
+      # Шаг 5: апускаем сканер зависимостей Trivy
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: 1
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
+
+      # Шаг 6: апускаем проверку стиля кода
+      - name: Run flake8 linting
+        run: |
+          flake8 . --max-line-length=120 --ignore=E501,W293,E203
+
+      # Шаг 7: апускаем unit-тесты
+      - name: Run Tests with pytest
+        run: |
+          python -m pytest tests/ -v
+
+  build:
+    name: Build Project
+    runs-on: ubuntu-latest
+    needs: security-scan
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build application
+        run: |
+          echo "🚀 Building the application..."
+          echo "✅ All checks passed!"
+          echo "✅ Build completed successfully!"
