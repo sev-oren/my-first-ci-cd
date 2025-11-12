@@ -1,0 +1,50 @@
+﻿name: Find the Error
+
+on: [push]
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: List all files
+        run: |
+          echo "📁 ALL FILES IN REPOSITORY:"
+          find . -type f -name "*.py" | head -20
+          echo ""
+          echo "📁 STRUCTURE:"
+          ls -la
+
+      - name: Check Python syntax
+        run: |
+          echo "🔍 CHECKING PYTHON FILES:"
+          python -m py_compile app.py && echo "✅ app.py syntax OK" || echo "❌ app.py has syntax errors"
+          python -m py_compile tests/test_app.py && echo "✅ test_app.py syntax OK" || echo "❌ test_app.py has syntax errors"
+
+      - name: Install and test step by step
+        run: |
+          echo "1. Installing dependencies..."
+          pip install -r requirements.txt
+          
+          echo "2. Testing imports..."
+          python -c "from app import app; print('✅ Flask app imports OK')"
+          
+          echo "3. Running Bandit..."
+          bandit -r . -f txt || echo "Bandit found issues"
+          
+          echo "4. Running Flake8..."
+          flake8 . --max-line-length=120 --ignore=E501,W293,E203 --exit-zero
+          
+          echo "5. Running tests..."
+          python -m pytest tests/ -v
+
+      - name: Final check
+        run: |
+          echo "✅ Debug completed!"
