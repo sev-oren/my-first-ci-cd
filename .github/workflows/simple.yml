@@ -19,14 +19,12 @@ jobs:
       
       - name: Test Flask app
         run: |
+          python -c "print('Starting test...')"
+          python -c "from app import app; print('✅ App imported successfully')"
           python -c "
-print('Starting test...')
-from app import app
-print('✅ App imported successfully')
 with app.test_client() as client:
     response = client.get('/')
     print(f'Status code: {response.status_code}')
-    print(f'Response: {response.data.decode()}')
     if response.status_code == 200:
         print('✅ Test PASSED!')
     else:
@@ -42,6 +40,6 @@ with app.test_client() as client:
     steps:
       - name: Build
         run: |
-          echo "�� Building application..."
+          echo "🚀 Building application..."
           echo "✅ All tests passed!"
           echo "✅ Build completed!"
