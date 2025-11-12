@@ -1,5 +1,5 @@
 ﻿"""Unit tests for Flask application."""
-import pytest
+import pytest  # noqa: F401
 from app import app
 
 
